@@ -21,11 +21,10 @@ jobs:
         working-directory: environments/preprod
 
     env:
-      ARM_USE_OIDC: true
-      ARM_USE_AZUREAD: true
-      ARM_CLIENT_ID: 8f68f273-2459-40e7-a428-916c82493349
-      ARM_TENANT_ID: 2f863c98-0e89-429b-a89b-c6eb3e93e9f3
-      ARM_SUBSCRIPTION_ID: dc7e8313-b18d-40f1-b737-94e233027ee2
+      ARM_CLIENT_ID: ${{ fromJSON(secrets.AZURE_CREDENTIALS).clientId }}
+      ARM_CLIENT_SECRET: ${{ fromJSON(secrets.AZURE_CREDENTIALS).clientSecret }}
+      ARM_TENANT_ID: ${{ fromJSON(secrets.AZURE_CREDENTIALS).tenantId }}
+      ARM_SUBSCRIPTION_ID: ${{ fromJSON(secrets.AZURE_CREDENTIALS).subscriptionId }}
 
     steps:
       - name: Checkout code
@@ -42,9 +41,7 @@ jobs:
       - name: Azure Login
         uses: azure/login@v2
         with:
-          client-id: 8f68f273-2459-40e7-a428-916c82493349
-          tenant-id: 2f863c98-0e89-429b-a89b-c6eb3e93e9f3
-          subscription-id: dc7e8313-b18d-40f1-b737-94e233027ee2
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
 
       - name: Terraform Init
         run: terraform init -input=false
