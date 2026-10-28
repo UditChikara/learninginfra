@@ -1,0 +1,92 @@
+
+name: Terraform Plan and Create PR
+
+on:
+  push:
+    branches:
+      - "feature/**"
+    paths:
+      - "environments/**"
+      - "modules/**"
+      - ".github/workflows/terraform-plan.yml"
+
+permissions:
+  contents: write
+  pull-requests: write
+  id-token: write
+
+jobs:
+  terraform-plan:
+    name: Terraform Plan - Preprod
+    runs-on: ubuntu-latest
+
+    defaults:
+      run:
+        working-directory: environments/preprod
+
+    env:
+      ARM_USE_OIDC: true
+      ARM_USE_AZUREAD: true
+      ARM_CLIENT_ID: 8f68f273-2459-40e7-a428-916c82493349
+      ARM_TENANT_ID: 2f863c98-0e89-429b-a89b-c6eb3e93e9f3
+      ARM_SUBSCRIPTION_ID: dc7e8313-b18d-40f1-b737-94e233027ee2
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: "1.9.8"
+
+      - name: Terraform Format Check
+        run: terraform fmt -check -recursive ../..
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          client-id: 8f68f273-2459-40e7-a428-916c82493349
+          tenant-id: 2f863c98-0e89-429b-a89b-c6eb3e93e9f3
+          subscription-id: dc7e8313-b18d-40f1-b737-94e233027ee2
+
+      - name: Terraform Init
+        run: terraform init -input=false
+
+      - name: Terraform Validate
+        run: terraform validate -no-color
+
+      - name: Terraform Plan
+        run: terraform plan -input=false -no-color
+
+  create-pr:
+    name: Create Pull Request
+    needs: terraform-plan
+    if: success()
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Create PR if one does not exist
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GH_REPO: ${{ github.repository }}
+          HEAD_BRANCH: ${{ github.ref_name }}
+        run: |
+          existing_pr=$(gh pr list \
+            --repo "$GH_REPO" \
+            --head "$HEAD_BRANCH" \
+            --base main \
+            --state open \
+            --json number \
+            --jq '.[0].number')
+
+          if [ -z "$existing_pr" ]; then
+            gh pr create \
+              --repo "$GH_REPO" \
+              --base main \
+              --head "$HEAD_BRANCH" \
+              --title "Terraform changes: $HEAD_BRANCH" \
+              --body "Terraform format, validation and plan completed successfully."
+          else
+            echo "An open PR already exists: #$existing_pr"
+          fi
