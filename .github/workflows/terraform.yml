@@ -5,10 +5,10 @@ on:
   push:
     branches:
       - "feature/**"
-    paths:
-      - "environments/**"
-      - "modules/**"
-      - ".github/workflows/terraform-plan.yml"
+    # paths:
+    #   - "environments/**"
+    #   - "modules/**"
+    #   - ".github/workflows/terraform-plan.yml"
 
 permissions:
   contents: write
