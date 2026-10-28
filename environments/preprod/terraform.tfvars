@@ -3,7 +3,7 @@ resource_group = {
     name     = "rg-preprod"
     location = "Central India"
   }
-  
+
 }
 
 storage_account = {
@@ -14,5 +14,5 @@ storage_account = {
     account_tier             = "Standard"
     account_replication_type = "LRS"
   }
-  
+
 }
