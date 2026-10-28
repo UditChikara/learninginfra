@@ -1,1 +1,1 @@
-variable "resource_groups" {}
+variable "resource_group" {}
